@@ -1,18 +1,22 @@
-import sbt.Keys._
-import sbt.Project.projectToRef
+import Settings.versions
+
+// If using Scala.js 0.6.x, also add the following import:
+import sbtcrossproject.CrossPlugin.autoImport.{crossProject, CrossType}
 
 // a special crossProject for configuring a JS/JVM/shared structure
-lazy val shared = (crossProject.crossType(CrossType.Pure) in file("shared"))
-  .settings(
-    scalaVersion := Settings.versions.scala,
-    libraryDependencies ++= Settings.sharedDependencies.value
-  )
-  // set up settings specific to the JS project
-  .jsConfigure(_ enablePlugins ScalaJSWeb)
+lazy val shared = //(crossProject.crossType(CrossType.Pure) in file("shared"))
+    crossProject(JSPlatform, JVMPlatform)
+      .crossType(CrossType.Pure)
+      .settings(
+        scalaVersion := Settings.versions.scala,
+        libraryDependencies ++= Settings.sharedDependencies.value
+      )
 
 lazy val sharedJVM = shared.jvm.settings(name := "sharedJVM")
 
 lazy val sharedJS = shared.js.settings(name := "sharedJS")
+  .enablePlugins(ScalaJSPlugin)
+  .enablePlugins(ScalaJSWeb)
 
 // use eliding to drop some debug code in the production build
 lazy val elideOptions = settingKey[Seq[String]]("Set limit for elidable functions")
@@ -30,7 +34,7 @@ lazy val client: Project = (project in file("client"))
     scalacOptions ++= elideOptions.value,
     jsDependencies ++= Settings.jsDependencies.value,
     // RuntimeDOM is needed for tests
-    jsDependencies += RuntimeDOM % "test",
+//    jsDependencies += RuntimeDOM % "test",
     // yes, we want to package JS dependencies
     skip in packageJSDependencies := false,
     // use Scala.js provided launcher code to start the client app
@@ -53,6 +57,7 @@ lazy val server = (project in file("server"))
     scalaVersion := Settings.versions.scala,
     scalacOptions ++= Settings.scalacOptions,
     libraryDependencies ++= Settings.jvmDependencies.value,
+    libraryDependencies += guice,
     commands += ReleaseCmd,
     // triggers scalaJSPipeline when using compile or continuous compilation
     compile in Compile := ((compile in Compile) dependsOn scalaJSPipeline).value,
@@ -63,9 +68,10 @@ lazy val server = (project in file("server"))
     // compress CSS
     LessKeys.compress in Assets := true
   )
+//  .aggregate(client)
   .enablePlugins(PlayScala)
   .disablePlugins(PlayLayoutPlugin) // use the standard directory layout instead of Play's custom
-  .aggregate(clients.map(projectToRef): _*)
+  .aggregate(clients.map(Project.projectToRef): _*)
   .dependsOn(sharedJVM)
 
 // Command for building a release

@@ -1,5 +1,9 @@
 import sbt._
 import org.scalajs.sbtplugin.ScalaJSPlugin.autoImport._
+import org.portablescala.sbtplatformdeps.PlatformDepsPlugin.autoImport._
+import sbtcrossproject.CrossPlugin.autoImport.{crossProject, CrossType, _}
+import scalajscrossproject.ScalaJSCrossPlugin.autoImport._
+//https://github.com/portable-scala/sbt-crossproject 迁移指南
 
 /**
  * Application settings. Configure the build for your application here.
@@ -22,7 +26,7 @@ object Settings {
 
   /** Declare global dependency versions here to avoid mismatches in multi part dependencies */
   object versions {
-    val scala = "2.11.11"
+    val scala = "2.12.8"
     val scalaDom = "0.9.3"
     val scalajsReact = "1.1.0"
     val scalaCSS = "0.5.3"
@@ -37,7 +41,9 @@ object Settings {
     val bootstrap = "3.3.6"
     val chartjs = "2.1.3"
 
-    val scalajsScripts = "1.0.0"
+    val scalajsScripts = "1.1.0"
+
+    val playVersion = "2.8.1"
   }
 
   /**
@@ -46,7 +52,7 @@ object Settings {
    */
   val sharedDependencies = Def.setting(Seq(
     "com.lihaoyi" %%% "autowire" % versions.autowire,
-    "io.suzaku" %%% "boopickle" % versions.booPickle
+    "io.suzaku" %%% "boopickle" % versions.booPickle,
   ))
 
   /** Dependencies only used by the JVM project */
@@ -54,7 +60,8 @@ object Settings {
     "com.vmunier" %% "scalajs-scripts" % versions.scalajsScripts,
     "org.webjars" % "font-awesome" % "4.3.0-1" % Provided,
     "org.webjars" % "bootstrap" % versions.bootstrap % Provided,
-    "com.lihaoyi" %% "utest" % versions.uTest % Test
+    "com.lihaoyi" %% "utest" % versions.uTest % Test,
+    "com.typesafe.play" %% "play-guice" % versions.playVersion
   ))
 
   /** Dependencies only used by the JS project (note the use of %%% instead of %%) */
